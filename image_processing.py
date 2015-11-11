@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 
 WHITE = np.array((255, 255, 255), dtype=np.uint8)
 BLACK = np.array(( 0,  0,  0), dtype=np.uint8)
@@ -31,10 +32,11 @@ def trim_mask(mask):
 
   return mask[top:bottom, left:right]
 
-def read_images(file_path, lines_count):
-  lines = [line.rstrip('\n').rstrip('\r') for line in open(file_path)]
-  lines_count = min(len(lines) - 1, lines_count)
-  return get_img_raw(lines[1:], lines_count)
+def read_images(file_path, lines_count, randomize):
+  lines = [line.rstrip('\n').rstrip('\r') for line in open(file_path)][1:]
+  if randomize: random.shuffle(lines)
+  lines_count = min(len(lines), lines_count)
+  return get_img_raw(lines, lines_count)
   
 def get_img_raw(lines, lines_count):
   imgs = []
@@ -51,8 +53,8 @@ def plot_img(mask):
   plt.show()  
   pass
 
-def get_train_set(file_path, lines_count):
-  raw_imgs = read_images(file_path, lines_count)
+def get_train_set(file_path, lines_count, randomize = False):
+  raw_imgs = read_images(file_path, lines_count, randomize)
   imgs = []
   for row in raw_imgs:
     img_value = row[0]
