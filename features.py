@@ -56,49 +56,49 @@ def color_change_count_h(mask, neglection_rate = .10):
   row, col = mask.shape
   row, col = float(row), float(col)
 
-  color_change_count = []
+  # black_to_white = 0
+  # white_to_black = 0
+  color_change_count = 0
 
   for r in mask:
-    color_change_count.append([0, 0])
     current_segment = 0
     for i in range(len(r) - 1):
-      if r[i] == r[i - 1]:
+      if r[i] == r[i + 1]:
         current_segment += 1
       else:
         if current_segment / col >= col * neglection_rate:
-          if r[i - 1]: # If the previous cell was black, so that's black_to_white
-            color_change_count[-1][1] += 1
-          else: # Change from white_to_black
-            color_change_count[-1][0] += 1
+          color_change_count += 1
         current_segment = 0
     # Check for the last unchecked segment
     if current_segment / col >= col * neglection_rate:
-      if r[i - 1]: # If the previous cell was black, so that's black_to_white
-        color_change_count[-1][1] += 1
-      else: # Change from white_to_black
-        color_change_count[-1][0] += 1
+      color_change_count += 1
+    current_segment = 0
 
-  print color_change_count
-  return np.array(color_change_count).mean(axis=0).tolist()
-  color_change_count_avg = np.array(color_change_count).mean(axis=0).tolist()
-  return sum(color_change_count_avg)
+  # print black_to_white, white_to_black
+  # if black_to_white > 5 or white_to_black > 5:
+  #   imgp.plot_img(mask)  
+  return color_change_count / row
+
+def standard_diviation(mask):
+  return np.array([i.std() for i in mask]).mean() 
+
 
 def featurize(mask, value = -1):
   mean_y, mean_x = mean(mask)
-  h_white_to_black, h_black_to_white = color_change_count_h(mask)
-  v_white_to_black, v_black_to_white = color_change_count_h(np.rot90(mask))
+  # h_white_to_black, h_black_to_white = color_change_count_h(mask)
+  # v_white_to_black, v_black_to_white = color_change_count_h(np.rot90(mask))
 
   features = {
-    "mean_y":              mean_y,
-    "mean_x":              mean_x,
-    "sym_x" :              sym_x(mask),
-    "sym_y":               sym_y(mask),
-    "on_pixels_in_h_half": on_pixels_in_h_half(mask),
-    "on_pixels_in_v_half": on_pixels_in_v_half(mask),
-    "h_white_to_black":    h_white_to_black,
-    "h_black_to_white":    h_black_to_white,
-    "v_white_to_black":    v_white_to_black,
-    "v_black_to_white":    v_black_to_white,
+    "mean_y":               mean_y,
+    "mean_x":               mean_x,
+    "sym_x" :               sym_x(mask),
+    "sym_y":                sym_y(mask),
+    "on_pixels_in_h_half":  on_pixels_in_h_half(mask),
+    "on_pixels_in_v_half":  on_pixels_in_v_half(mask),
+    "color_change_count_h": color_change_count_h(mask),
+    "color_change_count_v": color_change_count_h(np.rot90(mask)),
+    "standard_diviation_h": standard_diviation(mask),
+    "standard_diviation_v": standard_diviation(np.rot90(mask)),
   }
 
   if value == -1:

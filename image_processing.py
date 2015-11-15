@@ -12,7 +12,7 @@ BLACK = np.array(( 0,  0,  0), dtype=np.uint8)
 def threshold_grayscale_img(grayscale_img):
   mask = grayscale_img > grayscale_img.mean()
   return mask
-
+  
 def get_bin_img_from_mask(mask):
   bin_img = np.empty(mask.shape + (3,), dtype=np.uint8)
   bin_img[mask] = BLACK
@@ -53,7 +53,7 @@ def plot_img(mask):
   plt.show()  
   pass
 
-def get_train_set(file_path, lines_count, randomize = False):
+def get_train_set(file_path, lines_count, randomize = True):
   raw_imgs = read_images(file_path, lines_count, randomize)
   imgs = []
   for row in raw_imgs:

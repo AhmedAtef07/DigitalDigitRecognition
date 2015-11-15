@@ -20,6 +20,8 @@ else:
   train_percent = int(second_arg) / float(lines_count)
 
 
+
+
 t = time.time()
 raw_train_set = imgp.get_train_set("train.csv", lines_count)
 print len(raw_train_set), "samples are in the raw_train_set."
