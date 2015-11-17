@@ -7,6 +7,7 @@ import math
 import operator
 from threading import Thread
 import Queue
+import cPickle
 
 import features
 
@@ -14,7 +15,7 @@ train_set = []
 
 q = Queue.Queue()
 
-def analyze_raw_set(raw_train_set):
+def analyze_raw_set(raw_train_set, cache_file_name = "NONE"):
   ts = []
   for img in raw_train_set:
     ts.append(Thread(None, train_one_set, None, (img, )))
@@ -23,10 +24,23 @@ def analyze_raw_set(raw_train_set):
     t.join()
   global train_set
   train_set = [i for i in q.queue]
+  cache_train_set(cache_file_name)
     
     
 def train_one_set(img):
   q.put(features.featurize(img["data"], img["value"]))
+
+def cache_train_set(cache_file_name):
+  file_name = r"trainset_%d_%d.cache" % (len(train_set), int(time.time()))
+  if cache_file_name != "NONE":
+    file_name = "%s_%s" % (cache_file_name, len(train_set))
+  with open(file_name, "wb") as output_file:
+    cPickle.dump(train_set, output_file)
+
+def load_from_cache(file):
+  with open(file, "rb") as input_file:
+    global train_set
+    train_set = cPickle.load(input_file)
 
 def eclidean_distance(f1, f2):
   f1_values = f1.values()
@@ -37,7 +51,11 @@ def eclidean_distance(f1, f2):
   return math.sqrt(dis)
 
 def nearest_of_k_neighbors(distances, k):
-  pass
+  classVotes = defaultdict(lambda: 0)
+  for d in distances[:k]:    
+      classVotes[d['value']] += 1
+  sortedVotes = sorted(classVotes.iteritems(), key=operator.itemgetter(1), reverse=True)
+  return sortedVotes[0][0]
 
 q = Queue.Queue()
 

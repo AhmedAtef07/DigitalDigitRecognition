@@ -52,7 +52,7 @@ def on_pixels_in_h_half(mask):
 def on_pixels_in_v_half(mask):
   return mask[:, :mask.shape[1] / 2].flatten().tolist().count(True) / float(mask.flatten().tolist().count(True));
 
-def color_change_count_h(mask, neglection_rate = .10):
+def color_change_count_h2(mask, neglection_rate = .05):
   row, col = mask.shape
   row, col = float(row), float(col)
 
@@ -77,7 +77,21 @@ def color_change_count_h(mask, neglection_rate = .10):
   # print black_to_white, white_to_black
   # if black_to_white > 5 or white_to_black > 5:
   #   imgp.plot_img(mask)  
-  return color_change_count / row
+  # print color_change_count, row, color_change_count / row
+  return color_change_count / row * neglection_rate 
+
+def color_change_count_h(mask):
+  row, col = mask.shape
+  row, col = float(row), float(col)
+
+  color_change_count = 0
+
+  for r in mask:
+    for i in range(len(r) - 1):
+      if r[i] != r[i + 1]:
+        color_change_count += 1
+
+  return color_change_count / row / col
 
 def standard_diviation(mask):
   return np.array([i.std() for i in mask]).mean() 

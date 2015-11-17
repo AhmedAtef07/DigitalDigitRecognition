@@ -10,53 +10,106 @@ import sys
 import image_processing as imgp
 import pattern_detection as pd
 
-lines_count = int(sys.argv[1])
-train_percent = .90
+train_raw_set, test_raw_set = [], []
 
-second_arg = sys.argv[2]
-if "." in second_arg:
-  train_percent = float(second_arg)
+################################## TESTING FROM CACHED FILE ##################################
+if sys.argv[1] == "lc":
+  pd.load_from_cache(sys.argv[2])
+  test_raw_set = imgp.get_train_set("test")
+
+  for test_img in test_raw_set:
+    x = pd.detect(test_img["data"])
+
+    for k in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+      print "K = %2d: Expected %d" % (k, pd.nearest_of_k_neighbors(x, k))
+    imgp.plot_img(test_img["data"])
+    print "=" * 20
+
+elif sys.argv[1] == "lcsv":
+  pd.load_from_cache(sys.argv[2])
+  test_raw_set = imgp.get_csv_train_set("../mnist_test.csv", 10000)
+
+  print "=" * 20
+  t = time.time()
+
+  k_misses = defaultdict(lambda: 0)
+
+  count = 0 
+
+  for test_img in test_raw_set:
+    x = pd.detect(test_img["data"])
+    # nearest_neighbours = [i["value"] for i in pd.detect(test_img["data"])[:10]]
+    
+
+    for k in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+      if test_img["value"] != pd.nearest_of_k_neighbors(x, k):
+        k_misses[k] += 1
+    # if test_img["value"] != nearest_neighbours[0]:
+    #   imgp.plot_img(test_img["data"])
+
+    count += 1
+    if count % 100:
+      print "#%d, %d -> %d; Accuracy: %.2f%%, Correct: %d, Wrong: %d" % (count, test_img["value"], x[0]["value"], 100 - k_misses[1] / float(count) * 100, count - k_misses[1], k_misses[1])
+    
+  print "=" * 20
+
+  print "Test  Count: %d" % len(test_raw_set)
+  for k in range(len(k_misses)):
+    print "K = %2d: Accuracy: %.2f%%, Miss Count: %d" % (k_misses.keys()[k], 100 - k_misses.values()[k] / float(len(test_raw_set)) * 100, k_misses.values()[k])
+  print "Detecting completed in %d seconds." % (time.time() - t)
+
+
+
+
+################################## FEATURZING THE DATA SET ##################################
 else:
-  train_percent = int(second_arg) / float(lines_count)
+  lines_count = int(sys.argv[1])
+  train_percent = .90
 
+  second_arg = sys.argv[2]
+  if "." in second_arg:
+    train_percent = float(second_arg)
+  else:
+    train_percent = int(second_arg) / float(lines_count)
 
+  cache_file_name = "NONE"  
+  if len(sys.argv) > 3: cache_file_name = sys.argv[3]
 
+  t = time.time()
+  raw_train_set = imgp.get_csv_train_set("../mnist_train.csv", lines_count)
+  print len(raw_train_set), "samples are in the raw_train_set."
+  print "Parsing images completed in %d seconds." % (time.time() - t)
+  # 18 sec
 
-t = time.time()
-raw_train_set = imgp.get_train_set("train.csv", lines_count)
-print len(raw_train_set), "samples are in the raw_train_set."
-print "Parsing images completed in %d seconds." % (time.time() - t)
-# 18 sec
+  train_raw_set, test_raw_set = np.split(raw_train_set, [len(raw_train_set) * train_percent])
+  print "Number of samples in train_raw_set = %d" % len(train_raw_set)
+  print "Number of samples in test_raw_set = %d" % len(test_raw_set)
 
-train_raw_set, test_raw_set = np.split(raw_train_set, [len(raw_train_set) * train_percent])
-print "Number of samples in train_raw_set = %d" % len(train_raw_set)
-print "Number of samples in test_raw_set = %d" % len(test_raw_set)
+  t = time.time()
+  pd.analyze_raw_set(train_raw_set, cache_file_name)
+  print "Calculating train set features completed in %d seconds." % (time.time() - t)
 
-t = time.time()
-pd.analyze_raw_set(train_raw_set)
-print "Calculating train set features completed in %d seconds." % (time.time() - t)
+  print "=" * 20
+  t = time.time()
 
+  k_misses = defaultdict(lambda: 0)
 
-print "=" * 20
-t = time.time()
+  for test_img in test_raw_set:
+    x = pd.detect(test_img["data"])
+    # nearest_neighbours = [i["value"] for i in pd.detect(test_img["data"])[:10]]
+    
 
-miss_count = 0
+    for k in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+      if test_img["value"] != pd.nearest_of_k_neighbors(x, k):
+        k_misses[k] += 1
+    # if test_img["value"] != nearest_neighbours[0]:
+    #   imgp.plot_img(test_img["data"])
 
-for test_img in test_raw_set:
-  # pd.detect(test_img["data"])[:10]
-  nearest_neighbours = [i["value"] for i in pd.detect(test_img["data"])[:10]]
-  
+  print "=" * 20
 
-  if test_img["value"] != nearest_neighbours[0]:
-    miss_count += 1
-    # print test_img["value"], nearest_neighbours
-  # if test_img["value"] != nearest_neighbours[0]:
-  #   imgp.plot_img(test_img["data"])
+  print "Train Count: %d" % len(train_raw_set)
+  print "Test  Count: %d" % len(test_raw_set)
+  for k in range(len(k_misses)):
+    print "K = %2d: Accuracy: %.2f%%, Miss Count: %d" % (k_misses.keys()[k], 100 - k_misses.values()[k] / float(len(test_raw_set)) * 100, k_misses.values()[k])
+  print "Detecting completed in %d seconds." % (time.time() - t)
 
-print "=" * 20
-
-print "Train Count: %d" % len(train_raw_set)
-print "Test  Count: %d" % len(test_raw_set)
-print "Miss  Count: %d" % miss_count
-print "Accuracy on K=1: %.2f%%" % (100 - miss_count / float(len(test_raw_set)) * 100)
-print "Detecting completed in %d seconds." % (time.time() - t)
